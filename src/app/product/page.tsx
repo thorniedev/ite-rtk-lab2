@@ -16,8 +16,8 @@ export default function ProductPage() {
     title: "iPhone 15 Pro",
     description: "Latest Apple smartphone with A17 chip",
     price: 999,
-    image:
-      "https://i.pinimg.com/736x/2d/26/a9/2d26a931bf1a3f424819c584caf11586.jpg",
+    images: ["https://example.com/iphone15pro.jpg"],
+    category: ""
   };
 
   return (
@@ -31,7 +31,7 @@ export default function ProductPage() {
       </div>
 
       <ProductCart
-        image={product.image}
+        image={product.images[0]}
         title={product.title}
         description={product.description}
         onAddToCart={() => dispatch(addToCart(product))}
