@@ -10,7 +10,7 @@ export type ProductType = {
 
 export const ecommerceApi = createApi({
   reducerPath: 'ecommerceApi',
-  baseQuery: fetchBaseQuery({ baseUrl: process.env.NEXT_PUBLIC_API_URL }),
+  baseQuery: fetchBaseQuery({ baseUrl: "/api/ecommerce" }),
   endpoints: (builder) => ({
     getAllProducts: builder.query<ProductType, void>({
       query: () => `/products`,

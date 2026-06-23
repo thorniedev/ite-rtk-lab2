@@ -4,17 +4,14 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import {
   ColumnDef,
-  ColumnFiltersState,
   SortingState,
   VisibilityState,
   flexRender,
   getCoreRowModel,
-  getFilteredRowModel,
-  getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { ChevronDown, ChevronLeft, ChevronRight, Search } from "lucide-react";
+import { ChevronDown, Search } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -39,59 +36,45 @@ type DataTableProps<TData, TValue> = {
   data: TData[];
 };
 
-function globalProductFilter(
-  row: { original: ProductResponse },
-  _columnId: string,
-  filterValue: string,
-) {
-  const product = row.original;
-  const category =
-    typeof product.category === "string" ? product.category : product.category.name;
-  const haystack = [
-    product.id,
-    product.title,
-    product.price,
-    category,
-    product.description,
-  ]
-    .join(" ")
-    .toLowerCase();
-
-  return haystack.includes(filterValue.toLowerCase());
-}
-
 export function DataTable<TValue>({
   columns,
   data,
 }: DataTableProps<ProductResponse, TValue>) {
   const router = useRouter();
   const [sorting, setSorting] = React.useState<SortingState>([]);
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
-  const [globalFilter, setGlobalFilter] = React.useState("");
+  const [quickFilter, setQuickFilter] = React.useState("");
+
+  const filteredData = React.useMemo(() => {
+    const value = quickFilter.trim().toLowerCase();
+
+    if (!value) return data;
+
+    return data.filter((product) =>
+      [
+        product.id,
+        product.code,
+        product.slug,
+        product.name,
+        product.categoryName,
+        product.description,
+      ]
+        .join(" ")
+        .toLowerCase()
+        .includes(value),
+    );
+  }, [data, quickFilter]);
 
   const table = useReactTable({
-    data,
+    data: filteredData,
     columns,
     state: {
       sorting,
-      columnFilters,
       columnVisibility,
-      globalFilter,
     },
-    initialState: {
-      pagination: {
-        pageSize: 8,
-      },
-    },
-    globalFilterFn: globalProductFilter,
     onSortingChange: setSorting,
-    onColumnFiltersChange: setColumnFilters,
     onColumnVisibilityChange: setColumnVisibility,
-    onGlobalFilterChange: setGlobalFilter,
     getCoreRowModel: getCoreRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
   });
 
@@ -101,9 +84,9 @@ export function DataTable<TValue>({
         <div className="relative w-full sm:max-w-sm">
           <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Search products..."
-            value={globalFilter}
-            onChange={(event) => table.setGlobalFilter(event.target.value)}
+            placeholder="Quick filter current page..."
+            value={quickFilter}
+            onChange={(event) => setQuickFilter(event.target.value)}
             className="pl-9"
           />
         </div>
@@ -125,7 +108,7 @@ export function DataTable<TValue>({
                   checked={column.getIsVisible()}
                   onCheckedChange={(value) => column.toggleVisibility(!!value)}
                 >
-                  {column.id === "title" ? "Name / Title" : column.id}
+                  {column.id === "unitPrice" ? "Unit price" : column.id}
                 </DropdownMenuCheckboxItem>
               ))}
           </DropdownMenuContent>
@@ -153,7 +136,7 @@ export function DataTable<TValue>({
                 <TableRow
                   key={row.id}
                   className="cursor-pointer"
-                  onClick={() => router.push(`/product-table/${row.original.id}`)}
+                  onClick={() => router.push(`/product-table/${row.original.slug}`)}
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
@@ -171,32 +154,6 @@ export function DataTable<TValue>({
             )}
           </TableBody>
         </Table>
-      </div>
-
-      <div className="flex flex-col gap-3 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount() || 1}
-        </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.previousPage()}
-            disabled={!table.getCanPreviousPage()}
-          >
-            <ChevronLeft className="size-4" />
-            Previous
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.nextPage()}
-            disabled={!table.getCanNextPage()}
-          >
-            Next
-            <ChevronRight className="size-4" />
-          </Button>
-        </div>
       </div>
     </div>
   );
