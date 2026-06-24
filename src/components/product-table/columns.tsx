@@ -1,19 +1,11 @@
 "use client";
 
-import Image from "next/image";
 import { ArrowUpDown } from "lucide-react";
 import { ColumnDef } from "@tanstack/react-table";
 
 import { Button } from "@/components/ui/button";
+import { getSafeImageSrc } from "@/lib/utils";
 import { ProductResponse } from "@/types/productType";
-
-function getCategoryName(category: ProductResponse["category"]) {
-  if (typeof category === "string") return category;
-  if (category && typeof category === "object" && "name" in category) {
-    return String(category.name);
-  }
-  return "Uncategorized";
-}
 
 function SortHeader({
   label,
@@ -32,63 +24,65 @@ function SortHeader({
 
 export const columns: ColumnDef<ProductResponse>[] = [
   {
-    accessorKey: "image",
+    accessorKey: "thumbnail",
     header: "Image",
     enableSorting: false,
     cell: ({ row }) => (
       <div className="relative size-[50px] overflow-hidden rounded-md border bg-muted">
-        <Image
-          src={row.original.image ?? "https://placehold.co/100x100"}
-          alt={row.original.title}
-          fill
-          className="object-contain p-1"
-          sizes="50px"
+        <img
+          src={getSafeImageSrc(row.original.thumbnail, "https://placehold.co/100x100")}
+          alt={row.original.name}
+          className="size-full object-contain p-1"
         />
       </div>
     ),
   },
   {
-    accessorKey: "title",
+    accessorKey: "name",
     header: ({ column }) => (
       <SortHeader
-        label="Name / Title"
+        label="Name"
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
       />
     ),
     cell: ({ row }) => (
       <div className="max-w-[360px] truncate font-medium">
-        {row.original.title}
+        {row.original.name}
       </div>
     ),
   },
   {
-    accessorKey: "category",
+    accessorKey: "categoryName",
     header: "Category",
-    cell: ({ row }) => (
-      <span className="capitalize">{getCategoryName(row.original.category)}</span>
-    ),
-    filterFn: (row, id, value) =>
-      getCategoryName(row.getValue(id)).toLowerCase().includes(String(value).toLowerCase()),
+    cell: ({ row }) => row.original.categoryName ?? "Uncategorized",
   },
   {
-    accessorKey: "price",
+    accessorKey: "unitPrice",
     header: ({ column }) => (
       <SortHeader
-        label="Price"
+        label="Unit price"
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
       />
     ),
     cell: ({ row }) => (
-      <span className="font-medium">${row.original.price.toFixed(2)}</span>
+      <span className="font-medium">${row.original.unitPrice.toFixed(2)}</span>
     ),
   },
   {
-    id: "slug",
-    accessorFn: (row) => String(row.id),
+    accessorKey: "qty",
+    header: "Qty",
+  },
+  {
+    accessorKey: "isAvailable",
+    header: "Status",
+    cell: ({ row }) => (row.original.isAvailable ? "Available" : "Unavailable"),
+  },
+  {
+    accessorKey: "slug",
     header: "Slug",
     cell: ({ row }) => (
       <span className="font-mono text-xs text-muted-foreground">
-        {row.original.id}
+        {row.original.slug}
       </span>
     ),
   },

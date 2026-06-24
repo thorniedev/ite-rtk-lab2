@@ -1,26 +1,22 @@
 "use client";
 
-import Image from "next/image";
-
 import { Card, CardContent } from "@/components/ui/card";
 import { useGetProductsQuery } from "@/lib/features/product/productApi";
+import { getSafeImageSrc } from "@/lib/utils";
 
 type ProductDetailProps = {
   slug: string;
   framed?: boolean;
 };
 
-function getCategoryName(category: unknown) {
-  if (typeof category === "string") return category;
-  if (category && typeof category === "object" && "name" in category) {
-    return String((category as { name: string }).name);
-  }
-  return "Uncategorized";
-}
-
 export function ProductDetail({ slug, framed = true }: ProductDetailProps) {
-  const { data: products, isLoading, isError } = useGetProductsQuery();
-  const product = products?.find((item) => String(item.id) === slug);
+  const { data: productPage, isLoading, isError } = useGetProductsQuery({
+    pageNumber: 0,
+    pageSize: 100,
+  });
+  const product = productPage?.content.find(
+    (item) => item.slug === slug || String(item.id) === slug,
+  );
 
   const content = (
     <div className="grid gap-6 md:grid-cols-[240px_1fr]">
@@ -34,39 +30,46 @@ export function ProductDetail({ slug, framed = true }: ProductDetailProps) {
         </div>
       ) : !product ? (
         <div className="col-span-full py-16 text-center text-sm text-muted-foreground">
-          Product not found.
+          Product detail endpoint is not available yet, and this item was not in
+          the first product page.
         </div>
       ) : (
         <>
           <div className="relative aspect-square overflow-hidden rounded-lg border bg-muted">
-            <Image
-              src={product.image ?? "https://placehold.co/400x400"}
-              alt={product.title}
-              fill
-              className="object-contain p-6"
-              sizes="(min-width: 768px) 240px, 100vw"
+            <img
+              src={getSafeImageSrc(product.thumbnail, "https://placehold.co/400x400")}
+              alt={product.name}
+              className="size-full object-contain p-6"
             />
           </div>
           <div className="min-w-0 space-y-4">
             <div className="space-y-2">
               <div className="text-sm font-medium uppercase tracking-wide text-muted-foreground">
-                {getCategoryName(product.category)}
+                {product.categoryName ?? "Uncategorized"}
               </div>
               <h1 className="text-2xl font-semibold leading-tight">
-                {product.title}
+                {product.name}
               </h1>
             </div>
             <div className="flex flex-wrap items-center gap-3 text-sm">
               <span className="rounded-md bg-primary px-3 py-1 font-medium text-primary-foreground">
-                ${product.price.toFixed(2)}
+                ${product.unitPrice.toFixed(2)}
               </span>
               <span className="rounded-md border px-3 py-1 text-muted-foreground">
-                Slug: {product.id}
+                Qty: {product.qty}
+              </span>
+              <span className="rounded-md border px-3 py-1 text-muted-foreground">
+                {product.isAvailable ? "Available" : "Unavailable"}
+              </span>
+              <span className="rounded-md border px-3 py-1 text-muted-foreground">
+                Code: {product.code}
               </span>
             </div>
-            <p className="text-sm leading-6 text-muted-foreground">
-              {product.description}
-            </p>
+            {product.description ? (
+              <p className="text-sm leading-6 text-muted-foreground">
+                {product.description}
+              </p>
+            ) : null}
           </div>
         </>
       )}

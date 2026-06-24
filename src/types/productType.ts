@@ -5,46 +5,67 @@ export type Product = {
   price: number;
   image?: string;
   images: string[] | string;
-  category: string | ProductCategory;
-};
-
-export type ProductCategory = {
-  id: number;
-  name: string;
-  image?: string;
+  category: string;
 };
 
 export type ProductResponse = {
   id: number;
-  title: string;
-  description: string;
-  price: number;
-  image?: string;
-  images?: string[] | string;
-  category: string | ProductCategory;
-  creationAt?: string;
-  updatedAt?: string;
-};
-
-export type ProductRequest = {
-  title: string;
-  price: number;
-  description: string;
-  categoryId: number;
-  images: string[];
-};
-
-export type UploadResponse = {
-  originalname?: string;
-  filename?: string;
-  location: string;
-};
-
-export type Category = {
-  id: number;
+  code: string;
+  slug: string;
   name: string;
-  image: string;
+  thumbnail?: string;
+  unitPrice: number;
+  qty: number;
+  description?: string;
+  isAvailable: boolean;
+  categoryId?: number;
+  categoryName?: string;
 };
 
+export type CreateProductRequest = {
+  name: string;
+  thumbnail?: string;
+  unitPrice: number;
+  qty: number;
+  description?: string;
+  isAvailable?: boolean;
+  categoryId: number;
+};
+
+export type UpdateProductRequest = Partial<CreateProductRequest>;
+
+export type ProductFilterRequest = {
+  keyword?: string;
+  categoryId?: number;
+  isAvailable?: boolean;
+  page?: number;
+  size?: number;
+};
+
+export type PageResponse<T> = {
+  content: T[];
+  totalElements: number;
+  totalPages: number;
+  size: number;
+  number: number;
+};
+
+export type CategoryResponse = {
+  id: number;
+  code?: string;
+  name: string;
+  description?: string;
+  icon?: string;
+};
+
+export type ImageUploadResponse = {
+  url?: string;
+  location?: string;
+  fileUrl?: string;
+  path?: string;
+};
+
+export type ProductRequest = CreateProductRequest;
+export type Category = CategoryResponse;
 export type productType = Product;
 export type productResponse = ProductResponse;
