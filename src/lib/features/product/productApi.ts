@@ -6,6 +6,7 @@ import {
   PageResponse,
   ProductFilterRequest,
   ProductResponse,
+  UpdateProductRequest,
 } from "@/types/productType";
 
 type ProductListParams = {
@@ -90,6 +91,24 @@ export const productApi = createApi({
       }),
       invalidatesTags: ["Products"],
     }),
+    updateProduct: builder.mutation<
+      ProductResponse,
+      { id: number | string; body: UpdateProductRequest }
+    >({
+      query: ({ id, body }) => ({
+        url: `products/${id}`,
+        method: "PUT",
+        body,
+      }),
+      invalidatesTags: ["Products"],
+    }),
+    deleteProduct: builder.mutation<ProductResponse, number | string>({
+      query: (id) => ({
+        url: `products/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["Products"],
+    }),
     searchProducts: builder.mutation<
       PageResponse<ProductResponse>,
       ProductFilterRequest
@@ -114,7 +133,9 @@ export const productApi = createApi({
 
 export const {
   useCreateProductMutation,
+  useDeleteProductMutation,
   useGetCategoriesQuery,
   useGetProductsQuery,
   useSearchProductsMutation,
+  useUpdateProductMutation,
 } = productApi;

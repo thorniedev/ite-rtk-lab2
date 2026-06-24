@@ -11,7 +11,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { ChevronDown, Search } from "lucide-react";
+import { ChevronDown, Pencil, Search, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -34,11 +34,17 @@ import { ProductResponse } from "@/types/productType";
 type DataTableProps<TData, TValue> = {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
+  deletingProductId?: number | null;
+  onDeleteProduct?: (product: ProductResponse) => void;
+  onEditProduct?: (product: ProductResponse) => void;
 };
 
 export function DataTable<TValue>({
   columns,
   data,
+  deletingProductId,
+  onDeleteProduct,
+  onEditProduct,
 }: DataTableProps<ProductResponse, TValue>) {
   const router = useRouter();
   const [sorting, setSorting] = React.useState<SortingState>([]);
@@ -127,6 +133,9 @@ export function DataTable<TValue>({
                       : flexRender(header.column.columnDef.header, header.getContext())}
                   </TableHead>
                 ))}
+                {(onEditProduct || onDeleteProduct) && (
+                  <TableHead className="text-right">Actions</TableHead>
+                )}
               </TableRow>
             ))}
           </TableHeader>
@@ -143,11 +152,47 @@ export function DataTable<TValue>({
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </TableCell>
                   ))}
+                  {(onEditProduct || onDeleteProduct) && (
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
+                        {onEditProduct ? (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              onEditProduct(row.original);
+                            }}
+                          >
+                            <Pencil className="size-3.5" />
+                            Edit
+                          </Button>
+                        ) : null}
+                        {onDeleteProduct ? (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={deletingProductId === row.original.id}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              onDeleteProduct(row.original);
+                            }}
+                          >
+                            <Trash2 className="size-3.5" />
+                            Delete
+                          </Button>
+                        ) : null}
+                      </div>
+                    </TableCell>
+                  )}
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center">
+                <TableCell
+                  colSpan={columns.length + (onEditProduct || onDeleteProduct ? 1 : 0)}
+                  className="h-24 text-center"
+                >
                   No products found.
                 </TableCell>
               </TableRow>

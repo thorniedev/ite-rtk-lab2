@@ -32,6 +32,8 @@ export type CreateProductRequest = {
   categoryId: number;
 };
 
+export type UpdateProductRequest = Partial<CreateProductRequest>;
+
 export type ProductFilterRequest = {
   keyword?: string;
   categoryId?: number;

@@ -19,9 +19,11 @@ import { DataTable } from "@/components/product-table/data-table";
 import { ProductForm } from "@/components/product-table/product-form";
 import {
   useCreateProductMutation,
+  useDeleteProductMutation,
   useGetCategoriesQuery,
   useGetProductsQuery,
   useSearchProductsMutation,
+  useUpdateProductMutation,
 } from "@/lib/features/product/productApi";
 import {
   CreateProductRequest,
@@ -63,6 +65,12 @@ export function ProductTableClient() {
   const [availability, setAvailability] = React.useState("");
   const [appliedFilters, setAppliedFilters] = React.useState<AppliedFilters>({});
   const [showCreateForm, setShowCreateForm] = React.useState(false);
+  const [editingProduct, setEditingProduct] = React.useState<ProductResponse | null>(
+    null,
+  );
+  const [deletingProductId, setDeletingProductId] = React.useState<number | null>(
+    null,
+  );
 
   const {
     data: productPage,
@@ -72,6 +80,8 @@ export function ProductTableClient() {
   const { data: categories = [], isLoading: isLoadingCategories } =
     useGetCategoriesQuery();
   const [createProduct, { isLoading: isCreating }] = useCreateProductMutation();
+  const [updateProduct, { isLoading: isUpdating }] = useUpdateProductMutation();
+  const [deleteProduct] = useDeleteProductMutation();
   const [
     searchProducts,
     { data: searchPage, isLoading: isSearching, isError: isSearchError },
@@ -120,6 +130,47 @@ export function ProductTableClient() {
     }
   }
 
+  async function handleUpdateProduct(product: CreateProductRequest) {
+    if (!editingProduct) return;
+
+    try {
+      await toast.promise(
+        updateProduct({
+          id: editingProduct.id,
+          body: product,
+        }).unwrap(),
+        {
+          loading: "Updating product...",
+          success: "Product updated successfully.",
+          error: (error) => getErrorMessage(error),
+        },
+      );
+      setEditingProduct(null);
+    } catch {
+      // toast.promise renders the error message.
+    }
+  }
+
+  async function handleDeleteProduct(product: ProductResponse) {
+    const confirmed = window.confirm(`Delete "${product.name}"?`);
+
+    if (!confirmed) return;
+
+    setDeletingProductId(product.id);
+
+    try {
+      await toast.promise(deleteProduct(product.id).unwrap(), {
+        loading: "Deleting product...",
+        success: "Product deleted successfully.",
+        error: (error) => getErrorMessage(error),
+      });
+    } catch {
+      // toast.promise renders the error message.
+    } finally {
+      setDeletingProductId(null);
+    }
+  }
+
   function handleApplyFilters(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setPageNumber(0);
@@ -159,7 +210,10 @@ export function ProductTableClient() {
           <div className="flex flex-wrap gap-2">
             <Button
               variant="outline"
-              onClick={() => setShowCreateForm((value) => !value)}
+              onClick={() => {
+                setEditingProduct(null);
+                setShowCreateForm((value) => !value);
+              }}
             >
               <Plus />
               Add product
@@ -245,10 +299,21 @@ export function ProductTableClient() {
 
           {showCreateForm ? (
             <ProductForm
+              key="create-product"
               categories={categories}
               isSubmitting={isCreating}
               onCancel={() => setShowCreateForm(false)}
               onSubmit={handleCreateProduct}
+            />
+          ) : null}
+          {editingProduct ? (
+            <ProductForm
+              key={editingProduct.id}
+              categories={categories}
+              initialProduct={editingProduct}
+              isSubmitting={isUpdating}
+              onCancel={() => setEditingProduct(null)}
+              onSubmit={handleUpdateProduct}
             />
           ) : null}
 
@@ -270,7 +335,16 @@ export function ProductTableClient() {
               No products available.
             </div>
           ) : (
-            <DataTable columns={columns} data={products} />
+            <DataTable
+              columns={columns}
+              data={products}
+              deletingProductId={deletingProductId}
+              onDeleteProduct={handleDeleteProduct}
+              onEditProduct={(product) => {
+                setShowCreateForm(false);
+                setEditingProduct(product);
+              }}
+            />
           )}
 
           <div className="flex flex-col gap-3 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
