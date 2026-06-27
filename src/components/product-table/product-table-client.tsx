@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { LogOut, Plus, Search } from "lucide-react";
+import { Plus, Search } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -18,7 +18,6 @@ import { columns } from "@/components/product-table/columns";
 import { DataTable } from "@/components/product-table/data-table";
 import { ProductForm } from "@/components/product-table/product-form";
 import {
-  useCreateProductMutation,
   useDeleteProductMutation,
   useGetCategoriesQuery,
   useGetProductsQuery,
@@ -64,7 +63,6 @@ export function ProductTableClient() {
   const [categoryId, setCategoryId] = React.useState("");
   const [availability, setAvailability] = React.useState("");
   const [appliedFilters, setAppliedFilters] = React.useState<AppliedFilters>({});
-  const [showCreateForm, setShowCreateForm] = React.useState(false);
   const [editingProduct, setEditingProduct] = React.useState<ProductResponse | null>(
     null,
   );
@@ -79,7 +77,6 @@ export function ProductTableClient() {
   } = useGetProductsQuery({ pageNumber, pageSize });
   const { data: categories = [], isLoading: isLoadingCategories } =
     useGetCategoriesQuery();
-  const [createProduct, { isLoading: isCreating }] = useCreateProductMutation();
   const [updateProduct, { isLoading: isUpdating }] = useUpdateProductMutation();
   const [deleteProduct] = useDeleteProductMutation();
   const [
@@ -116,19 +113,6 @@ export function ProductTableClient() {
       size: pageSize,
     });
   }, [appliedFilters, isFiltering, pageNumber, pageSize, searchProducts]);
-
-  async function handleCreateProduct(product: CreateProductRequest) {
-    try {
-      await toast.promise(createProduct(product).unwrap(), {
-        loading: "Creating product...",
-        success: "Product created successfully.",
-        error: (error) => getErrorMessage(error),
-      });
-      setShowCreateForm(false);
-    } catch {
-      // toast.promise renders the error message.
-    }
-  }
 
   async function handleUpdateProduct(product: CreateProductRequest) {
     if (!editingProduct) return;
@@ -208,20 +192,15 @@ export function ProductTableClient() {
             </CardDescription>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button
-              variant="outline"
-              onClick={() => {
-                setEditingProduct(null);
-                setShowCreateForm((value) => !value);
-              }}
-            >
-              <Plus />
-              Add product
+            <Button asChild variant="outline">
+              <Link href="/product-table/create">
+                <Plus />
+                Add product
+              </Link>
             </Button>
             <Button asChild variant="outline">
-              <Link href="/api/auth/logout">
-                <LogOut />
-                Logout
+              <Link href="/">
+                Home
               </Link>
             </Button>
           </div>
@@ -297,15 +276,6 @@ export function ProductTableClient() {
             </div>
           </form>
 
-          {showCreateForm ? (
-            <ProductForm
-              key="create-product"
-              categories={categories}
-              isSubmitting={isCreating}
-              onCancel={() => setShowCreateForm(false)}
-              onSubmit={handleCreateProduct}
-            />
-          ) : null}
           {editingProduct ? (
             <ProductForm
               key={editingProduct.id}
@@ -340,10 +310,7 @@ export function ProductTableClient() {
               data={products}
               deletingProductId={deletingProductId}
               onDeleteProduct={handleDeleteProduct}
-              onEditProduct={(product) => {
-                setShowCreateForm(false);
-                setEditingProduct(product);
-              }}
+              onEditProduct={(product) => setEditingProduct(product)}
             />
           )}
 

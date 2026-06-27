@@ -7,6 +7,7 @@ import {
 } from "@/lib/auth/keycloak";
 
 export async function GET(request: NextRequest) {
+  const error = request.nextUrl.searchParams.get("error");
   const code = request.nextUrl.searchParams.get("code");
   const state = request.nextUrl.searchParams.get("state");
   const storedState = request.cookies.get(AUTH_COOKIE_NAMES.state)?.value;
@@ -14,8 +15,17 @@ export async function GET(request: NextRequest) {
   const returnTo =
     request.cookies.get(AUTH_COOKIE_NAMES.returnTo)?.value ?? "/product-table";
 
-  if (!code || !state || !storedState || state !== storedState || !codeVerifier) {
-    return Response.json({ message: "Invalid Keycloak login state." }, { status: 400 });
+  if (error || !code || !state || !storedState || state !== storedState || !codeVerifier) {
+    const loginUrl = new URL("/api/auth/login", request.url);
+    loginUrl.searchParams.set("returnTo", returnTo);
+
+    const response = NextResponse.redirect(loginUrl);
+
+    response.cookies.delete(AUTH_COOKIE_NAMES.state);
+    response.cookies.delete(AUTH_COOKIE_NAMES.codeVerifier);
+    response.cookies.delete(AUTH_COOKIE_NAMES.returnTo);
+
+    return response;
   }
 
   try {

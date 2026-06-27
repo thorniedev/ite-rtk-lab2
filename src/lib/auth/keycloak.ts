@@ -48,7 +48,7 @@ function getCookieOptions(maxAge?: number) {
 }
 
 function getKeycloakBaseUrl() {
-  return process.env.KEYCLOAK_BASE_URL?.replace(/\/$/, "");
+  return process.env.KEYCLOAK_BASE_URL?.trim().replace(/\/$/, "");
 }
 
 export function hasKeycloakConfig() {
@@ -71,7 +71,8 @@ export function getKeycloakConfig() {
   }
 
   const appUrl =
-    process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ?? "http://localhost:3000";
+    process.env.NEXT_PUBLIC_APP_URL?.trim().replace(/\/$/, "") ??
+    "http://localhost:3000";
   const issuer = `${baseUrl}/realms/${realm}`;
 
   return {
@@ -80,7 +81,7 @@ export function getKeycloakConfig() {
     clientSecret: process.env.KEYCLOAK_CLIENT_SECRET,
     issuer,
     redirectUri:
-      process.env.KEYCLOAK_REDIRECT_URI ?? `${appUrl}/api/auth/callback`,
+      process.env.KEYCLOAK_REDIRECT_URI?.trim() ?? `${appUrl}/api/auth/callback`,
   };
 }
 
@@ -264,13 +265,16 @@ export async function getAuthSession() {
   };
 }
 
-export async function getLogoutUrl() {
+export async function getLogoutUrl(postLogoutRedirectUrl?: URL) {
   const config = getKeycloakConfig();
   const cookieStore = await cookies();
   const idToken = cookieStore.get(AUTH_COOKIE_NAMES.idToken)?.value;
   const url = new URL(`${config.issuer}/protocol/openid-connect/logout`);
 
-  url.searchParams.set("post_logout_redirect_uri", config.appUrl);
+  url.searchParams.set(
+    "post_logout_redirect_uri",
+    postLogoutRedirectUrl?.toString() ?? config.appUrl,
+  );
   url.searchParams.set("client_id", config.clientId);
 
   if (idToken) {

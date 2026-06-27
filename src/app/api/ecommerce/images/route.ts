@@ -9,7 +9,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const response = await fetch(ecommerceApiUrl("/images"), {
+    const response = await fetch(ecommerceApiUrl("/minio/upload"), {
       method: "POST",
       headers: {
         Authorization: `Bearer ${accessToken}`,

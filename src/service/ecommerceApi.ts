@@ -19,3 +19,4 @@ export const ecommerceApi = createApi({
 })
 
 export const { useGetAllProductsQuery } = ecommerceApi;
+

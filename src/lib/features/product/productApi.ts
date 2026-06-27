@@ -25,19 +25,37 @@ function extractArray<T>(value: unknown): T[] {
 
   if (!record) return [];
 
-  for (const key of ["content", "data", "payload", "items", "results"]) {
+  for (const key of [
+    "content",
+    "contents",
+    "data",
+    "payload",
+    "items",
+    "results",
+    "categories",
+    "categoryList",
+    "list",
+  ]) {
     const nested = record[key];
 
     if (Array.isArray(nested)) return nested as T[];
 
     const nestedRecord = asRecord(nested);
     if (nestedRecord) {
-      const nestedContent = nestedRecord.content;
-      if (Array.isArray(nestedContent)) return nestedContent as T[];
+      const nestedItems = extractArray<T>(nestedRecord);
+      if (nestedItems.length) return nestedItems;
     }
   }
 
   return [];
+}
+
+function normalizeProduct(value: ProductResponse): ProductResponse {
+  return {
+    ...value,
+    categoryId: value.categoryId ?? value.category?.id,
+    categoryName: value.categoryName ?? value.category?.name,
+  };
 }
 
 function normalizePage<T>(value: unknown): PageResponse<T> {
@@ -64,8 +82,17 @@ function normalizePage<T>(value: unknown): PageResponse<T> {
     content,
     totalElements: Number(nestedPage.totalElements ?? content.length),
     totalPages: Number(nestedPage.totalPages ?? 1),
-    size: Number(nestedPage.size ?? content.length),
+    size: Number(nestedPage.size ?? nestedPage.pageSize ?? content.length),
     number: Number(nestedPage.number ?? nestedPage.pageNumber ?? 0),
+  };
+}
+
+function normalizeProductPage(value: unknown): PageResponse<ProductResponse> {
+  const page = normalizePage<ProductResponse>(value);
+
+  return {
+    ...page,
+    content: page.content.map(normalizeProduct),
   };
 }
 
@@ -79,8 +106,7 @@ export const productApi = createApi({
     getProducts: builder.query<PageResponse<ProductResponse>, ProductListParams | void>({
       query: ({ pageNumber = 0, pageSize = 25 } = {}) =>
         `products?pageNumber=${pageNumber}&pageSize=${pageSize}`,
-      transformResponse: (response: unknown) =>
-        normalizePage<ProductResponse>(response),
+      transformResponse: normalizeProductPage,
       providesTags: ["Products"],
     }),
     createProduct: builder.mutation<ProductResponse, CreateProductRequest>({
@@ -89,6 +115,7 @@ export const productApi = createApi({
         method: "POST",
         body,
       }),
+      transformResponse: (response: ProductResponse) => normalizeProduct(response),
       invalidatesTags: ["Products"],
     }),
     updateProduct: builder.mutation<
@@ -100,6 +127,7 @@ export const productApi = createApi({
         method: "PUT",
         body,
       }),
+      transformResponse: (response: ProductResponse) => normalizeProduct(response),
       invalidatesTags: ["Products"],
     }),
     deleteProduct: builder.mutation<ProductResponse, number | string>({
@@ -119,11 +147,11 @@ export const productApi = createApi({
         body,
       }),
       transformResponse: (response: unknown) =>
-        normalizePage<ProductResponse>(response),
+        normalizeProductPage(response),
       invalidatesTags: ["Products"],
     }),
     getCategories: builder.query<CategoryResponse[], void>({
-      query: () => "categories",
+      query: () => "categories?pageNumber=0&pageSize=100",
       transformResponse: (response: unknown) =>
         extractArray<CategoryResponse>(response),
       providesTags: ["Categories"],

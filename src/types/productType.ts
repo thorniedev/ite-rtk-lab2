@@ -18,6 +18,7 @@ export type ProductResponse = {
   qty: number;
   description?: string;
   isAvailable: boolean;
+  category?: CategoryResponse;
   categoryId?: number;
   categoryName?: string;
 };
@@ -59,6 +60,10 @@ export type CategoryResponse = {
 };
 
 export type ImageUploadResponse = {
+  Uri?: string;
+  downloadUri?: string;
+  name?: string;
+  uri?: string;
   url?: string;
   location?: string;
   fileUrl?: string;

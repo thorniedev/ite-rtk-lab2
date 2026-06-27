@@ -11,6 +11,7 @@ export function proxy(request: NextRequest) {
   );
   const isEcommerceApiRequest = pathname.startsWith("/api/ecommerce");
   const isLoginPage = pathname === "/login";
+  const isPublicPage = pathname === "/" || pathname === "/about" || pathname === "/product";
 
   if (isAuthenticated) {
     if (isLoginPage) {
@@ -25,6 +26,10 @@ export function proxy(request: NextRequest) {
       { message: "Unauthorized. Sign in with Keycloak first." },
       { status: 401 },
     );
+  }
+
+  if (isPublicPage) {
+    return NextResponse.next();
   }
 
   const loginUrl = new URL("/api/auth/login", request.url);
